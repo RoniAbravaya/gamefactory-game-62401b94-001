@@ -1,64 +1,50 @@
 import 'package:flame/components.dart';
-import 'package:flame/geometry.dart';
-import 'package:flame_audio/flame_audio.dart';
+import 'package:flame/collisions.dart';
+import 'package:flutter/material.dart';
 
-/// A component representing a collectible item in the game.
-/// It includes collision detection, a score value, and an optional animation.
-class Collectible extends SpriteComponent with Hitbox, Collidable {
-  /// The score value this collectible adds when collected.
-  final int scoreValue;
+class Collectible extends PositionComponent with CollisionCallbacks {
+  final int value;
+  double _floatOffset = 0;
 
-  /// The path to the sound effect to play when this collectible is collected.
-  final String collectionSoundPath;
-
-  /// Indicates whether this collectible has been collected.
-  bool _collected = false;
-
-  /// Creates a new instance of a collectible item.
-  ///
-  /// [scoreValue] specifies the score value of the collectible.
-  /// [collectionSoundPath] specifies the path to the sound effect to play upon collection.
-  /// [sprite] is an optional parameter to set the sprite for this component.
-  /// [size] is an optional parameter to set the size of this component.
-  /// [position] is an optional parameter to set the position of this component.
   Collectible({
-    required this.scoreValue,
-    required this.collectionSoundPath,
-    Sprite? sprite,
-    Vector2? size,
-    Vector2? position,
-  }) : super(sprite: sprite, size: size, position: position) {
-    addShape(HitboxRectangle());
+    required Vector2 position,
+    this.value = 10,
+  }) : super(
+          position: position,
+          size: Vector2(30, 30),
+          anchor: Anchor.center,
+        );
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    add(CircleHitbox());
   }
 
   @override
-  Future<void>? onLoad() async {
-    try {
-      await super.onLoad();
-      // Optionally, load and set an animation for the collectible here.
-    } catch (e) {
-      // Handle loading error
-      print('Error loading Collectible: $e');
-    }
-  }
-
-  /// Handles the logic when this collectible is collected by the player.
-  void collect() {
-    if (!_collected) {
-      _collected = true;
-      FlameAudio.play(collectionSoundPath);
+  void update(double dt) {
+    super.update(dt);
+    
+    position.y += 80 * dt;
+    
+    _floatOffset += dt * 5;
+    position.x += (0.5 * ((_floatOffset % 2) < 1 ? 1 : -1));
+    
+    if (position.y > 900) {
       removeFromParent();
-      // Additional logic for updating the game state can be added here.
     }
   }
 
   @override
-  void onCollision(Set<Vector2> intersectionPoints, Collidable other) {
-    super.onCollision(intersectionPoints, other);
-    // Check if the colliding entity is the player and collect the item.
-    // This requires a way to identify the player, e.g., checking the type of `other`.
-    if (!_collected && other is Player) { // Assuming there's a Player class
-      collect();
-    }
+  void render(Canvas canvas) {
+    canvas.drawCircle(
+      Offset(size.x / 2, size.y / 2),
+      size.x / 2,
+      Paint()..color = Colors.amber,
+    );
+  }
+
+  void collect() {
+    removeFromParent();
   }
 }

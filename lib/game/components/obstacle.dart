@@ -1,48 +1,44 @@
 import 'package:flame/components.dart';
-import 'package:flame/geometry.dart';
-import 'package:flame/sprite.dart';
+import 'package:flame/collisions.dart';
+import 'package:flutter/material.dart';
 
-/// A component representing an obstacle in a platformer game.
-/// It includes a visual representation, collision detection,
-/// and can deal damage to the player on contact.
-class Obstacle extends PositionComponent with HasHitboxes, Collidable {
-  final Vector2 _size;
-  final String _spritePath;
-  late SpriteComponent _spriteComponent;
+class Obstacle extends PositionComponent with CollisionCallbacks {
+  final double moveSpeed;
+  final Vector2 direction;
 
-  /// Creates an instance of an obstacle.
-  /// [size] specifies the size of the obstacle.
-  /// [spritePath] specifies the path to the sprite image.
-  Obstacle(this._size, this._spritePath) {
-    addHitbox(HitboxRectangle());
-  }
+  Obstacle({
+    required Vector2 position,
+    required Vector2 size,
+    this.moveSpeed = 150,
+    this.direction = const Vector2(0, 1),
+  }) : super(
+          position: position,
+          size: size,
+          anchor: Anchor.center,
+        );
 
   @override
   Future<void> onLoad() async {
-    super.onLoad();
-    size = _size;
-    _spriteComponent = SpriteComponent.fromImage(
-      await gameRef.images.load(_spritePath),
-      size: size,
-    );
-    add(_spriteComponent);
-  }
-
-  /// Handles the logic when a collision is detected.
-  /// In this context, it could deal damage or trigger a fail state.
-  void onCollision() {
-    // Implement damage dealing or game over logic here
+    await super.onLoad();
+    add(RectangleHitbox());
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    // Implement any movement or spawning behavior here
+    position += direction * moveSpeed * dt;
+    
+    if (position.y > 900 || position.y < -100 ||
+        position.x > 500 || position.x < -100) {
+      removeFromParent();
+    }
   }
 
   @override
-  void onCollision(Set<Vector2> intersectionPoints, Collidable other) {
-    super.onCollision(intersectionPoints, other);
-    onCollision();
+  void render(Canvas canvas) {
+    canvas.drawRect(
+      size.toRect(),
+      Paint()..color = Colors.red,
+    );
   }
 }
